@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MacroLens — Country Economic Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Libre+Baskerville:ital@0;1&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--bg:#0a0c10;--bg2:#111318;--bg3:#181c23;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);--text:#e8eaf0;--muted:#6b7280;--accent:#00e5a0;--accent2:#4f8eff;--accent3:#ff6b6b;--accent4:#f5c518;--accent5:#b07bff;--fh:'Syne',sans-serif;--fb:'DM Mono',monospace;--fs:'Libre Baskerville',serif}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--fb);font-size:13px;min-height:100vh;overflow-x:hidden}
+.shell{display:flex;min-height:100vh}
+.sidebar{width:215px;min-width:215px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:22px 20px 18px;border-bottom:1px solid var(--border)}
+.logo-mark{font-family:var(--fh);font-size:20px;font-weight:800;letter-spacing:-0.5px;color:var(--accent)}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+.nav-section{padding:14px 10px 6px}
+.nav-label{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:0 8px;margin-bottom:5px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;transition:all .15s;color:var(--muted);font-size:12px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:rgba(255,255,255,.05);color:var(--text)}
+.nav-item.active{background:rgba(0,229,160,.1);color:var(--accent)}
+.nav-dot{width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.sidebar-footer{margin-top:auto;padding:14px 18px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);line-height:1.7}
+.main{flex:1;min-width:0}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;flex-wrap:wrap}
+.topbar-title{font-family:var(--fh);font-size:14px;font-weight:700;color:var(--text);flex:1;min-width:120px}
+.country-selector{display:flex;gap:5px;flex-wrap:wrap}
+.country-btn{padding:4px 11px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:var(--fb);font-size:11px;cursor:pointer;transition:all .15s}
+.country-btn:hover{border-color:var(--accent);color:var(--accent)}
+.country-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:500}
+.live-badge{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--accent);letter-spacing:.08em}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.content{padding:20px 24px}
+.section{display:none}
+.section.active{display:block}
+.kpi-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.kpi-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--ac,var(--accent))}
+.kpi-label{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.kpi-value{font-family:var(--fh);font-size:24px;font-weight:800;color:var(--text);line-height:1}
+.kpi-unit{font-size:10px;color:var(--muted);margin-top:3px}
+.kpi-change{display:inline-flex;align-items:center;gap:3px;font-size:10px;padding:2px 6px;border-radius:3px;margin-top:5px}
+.kpi-change.up{background:rgba(0,229,160,.12);color:var(--accent)}
+.kpi-change.down{background:rgba(255,107,107,.12);color:var(--accent3)}
+.kpi-change.neutral{background:rgba(255,255,255,.07);color:var(--muted)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.s2{grid-column:span 2}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px}
+.card-hd{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;gap:10px}
+.card-title{font-family:var(--fh);font-size:14px;font-weight:700;color:var(--text)}
+.card-sub{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic;font-family:var(--fs)}
+.tag{font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:4px;border:1px solid;white-space:nowrap;flex-shrink:0}
+.tg{border-color:var(--accent);color:var(--accent)}
+.tb{border-color:var(--accent2);color:var(--accent2)}
+.tr{border-color:var(--accent3);color:var(--accent3)}
+.ty{border-color:var(--accent4);color:var(--accent4)}
+.tp{border-color:var(--accent5);color:var(--accent5)}
+.cw{position:relative;width:100%}
+.annot{background:rgba(79,142,255,.06);border-left:2px solid var(--accent2);border-radius:0 6px 6px 0;padding:10px 14px;font-size:12px;color:var(--muted);margin:10px 0 16px;font-family:var(--fs);font-style:italic;line-height:1.6}
+.annot strong{color:var(--text);font-style:normal;font-family:var(--fb)}
+.sec-hd{display:flex;align-items:baseline;gap:12px;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.sec-title{font-family:var(--fh);font-size:19px;font-weight:800;color:var(--text)}
+.sec-desc{font-size:11px;color:var(--muted);font-family:var(--fs);font-style:italic}
+.sig{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:4px;font-size:10px;letter-spacing:.07em;text-transform:uppercase}
+.sig-bull{background:rgba(0,229,160,.1);color:var(--accent);border:1px solid rgba(0,229,160,.25)}
+.sig-bear{background:rgba(255,107,107,.1);color:var(--accent3);border:1px solid rgba(255,107,107,.25)}
+.sig-neut{background:rgba(245,197,24,.1);color:var(--accent4);border:1px solid rgba(245,197,24,.25)}
+.sig-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.cmp{display:grid;grid-template-columns:130px repeat(5,1fr);gap:1px;background:var(--border);border-radius:8px;overflow:hidden;font-size:12px}
+.cc{background:var(--bg2);padding:9px 11px}
+.ch{background:var(--bg3);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.cl{color:var(--muted);font-size:11px}
+.cv{color:var(--text);font-weight:500}
+.h1{color:var(--accent)}.h2{color:#7fff87}.h3{color:var(--accent4)}.h4{color:#ff9f43}.h5{color:var(--accent3)}
+.ind-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.ind-row:last-child{border-bottom:none}
+.ind-lbl{font-size:12px;color:var(--muted)}
+.ind-bw{flex:1;margin:0 14px;height:4px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden}
+.ind-b{height:100%;border-radius:2px;transition:width .8s ease}
+.ind-v{font-size:12px;font-weight:500;min-width:55px;text-align:right}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp .4s ease both}
+.fu:nth-child(2){animation-delay:.05s}.fu:nth-child(3){animation-delay:.1s}.fu:nth-child(4){animation-delay:.15s}.fu:nth-child(5){animation-delay:.2s}.fu:nth-child(6){animation-delay:.25s}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+@media(max-width:900px){.sidebar{display:none}.g2,.g3{grid-template-columns:1fr}.s2{grid-column:span 1}.cmp{grid-template-columns:100px repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="logo"><div class="logo-mark">MacroLens</div><div class="logo-sub">Economic Intelligence</div></div>
+  <nav class="nav-section">
+    <div class="nav-label">Analysis</div>
+    <button class="nav-item active" onclick="go('overview')"><span class="nav-dot"></span>Overview</button>
+    <button class="nav-item" onclick="go('growth')"><span class="nav-dot"></span>GDP &amp; Growth</button>
+    <button class="nav-item" onclick="go('inflation')"><span class="nav-dot"></span>Inflation &amp; CPI</button>
+    <button class="nav-item" onclick="go('trade')"><span class="nav-dot"></span>Trade &amp; Exports</button>
+    <button class="nav-item" onclick="go('labor')"><span class="nav-dot"></span>Unemployment</button>
+    <button class="nav-item" onclick="go('debt')"><span class="nav-dot"></span>Debt &amp; Fiscal</button>
+    <button class="nav-item" onclick="go('population')"><span class="nav-dot"></span>Demographics</button>
+  </nav>
+  <nav class="nav-section">
+    <div class="nav-label">Theories</div>
+    <button class="nav-item" onclick="go('phillips')"><span class="nav-dot"></span>Phillips Curve</button>
+    <button class="nav-item" onclick="go('solow')"><span class="nav-dot"></span>Solow Growth</button>
+    <button class="nav-item" onclick="go('ppp')"><span class="nav-dot"></span>PPP Analysis</button>
+    <button class="nav-item" onclick="go('comparative')"><span class="nav-dot"></span>Comparative Adv.</button>
+  </nav>
+  <div class="sidebar-footer">Data: World Bank · IMF<br>DBnomics · 2024 estimates</div>
+</aside>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pg-title">Overview Dashboard</div>
+    <div class="country-selector">
+      <button class="country-btn active" onclick="setC('BGD',this)">🇧🇩 Bangladesh</button>
+      <button class="country-btn" onclick="setC('IND',this)">🇮🇳 India</button>
+      <button class="country-btn" onclick="setC('CHN',this)">🇨🇳 China</button>
+      <button class="country-btn" onclick="setC('USA',this)">🇺🇸 USA</button>
+      <button class="country-btn" onclick="setC('DEU',this)">🇩🇪 Germany</button>
+    </div>
+    <div class="live-badge"><span class="live-dot"></span>LIVE SIM</div>
+  </div>
+
+  <div class="content">
+
+  <!-- OVERVIEW -->
+  <div class="section active" id="sec-overview">
+    <div class="sec-hd"><span class="sec-title" id="ov-name">Bangladesh</span><span class="sec-desc">Macroeconomic snapshot</span></div>
+    <div class="kpi-strip" id="kpi0"></div>
+    <div class="g2">
+      <div class="card fu"><div class="card-hd"><div><div class="card-title">GDP Growth Rate</div><div class="card-sub">Annual % real GDP change</div></div><span class="tag tg">Solow</span></div><div class="cw" style="height:190px"><canvas id="c_gdpov"></canvas></div></div>
+      <div class="card fu"><div class="card-hd"><div><div class="card-title">Inflation vs Unemployment</div><div class="card-sub">Phillips Curve scatter</div></div><span class="tag tr">Phillips</span></div><div class="cw" style="height:190px"><canvas id="c_phov"></canvas></div></div>
+    </div>
+    <div class="g3">
+      <div class="card fu s2"><div class="card-hd"><div><div class="card-title">Trade Balance</div><div class="card-sub">Exports vs Imports (USD Bn)</div></div><span class="tag tb">Comp. Adv.</span></div><div class="cw" style="height:170px"><canvas id="c_trov"></canvas></div></div>
+      <div class="card fu"><div class="card-hd"><div><div class="card-title">Key Signals</div><div class="card-sub">Economic health</div></div></div><div id="sig-panel"></div></div>
+    </div>
+    <div class="card fu"><div class="card-hd"><div><div class="card-title">Country Comparison 2024</div><div class="card-sub">5 economies side-by-side</div></div></div><div class="cmp" id="cmp-grid"></div></div>
+  </div>
+
+  <!-- GDP -->
+  <div class="section" id="sec-growth">
+    <div class="sec-hd"><span class="sec-title">GDP &amp; Growth</span><span class="sec-desc">Solow Model — capital, labor, TFP</span></div>
+    <div class="kpi-strip" id="kpi-gdp"></div>
+    <div class="card"><div class="card-hd"><div><div class="card-title">Real GDP Growth (%) 2000–2024</div><div class="card-sub">Annual % change</div></div><span class="tag tg">Solow</span></div>
+    <div class="annot"><strong>Solow:</strong> Y = A·K^α·L^(1-α) — Long-run growth is determined solely by technological progress (TFP). Capital deepening yields diminishing returns.</div>
+    <div class="cw" style="height:240px"><canvas id="c_gdpfull"></canvas></div></div>
+    <div class="g2">
+      <div class="card"><div class="card-hd"><div><div class="card-title">GDP per Capita PPP</div><div class="card-sub">Purchasing power adjusted</div></div><span class="tag tp">PPP</span></div><div class="cw" style="height:190px"><canvas id="c_gdpcap"></canvas></div></div>
+      <div class="card"><div class="card-hd"><div><div class="card-title">Capital Formation (% GDP)</div><div class="card-sub">Gross fixed capital formation</div></div><span class="tag tg">Solow</span></div><div class="cw" style="height:190px"><canvas id="c_capf"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- INFLATION -->
+  <div class="section" id="sec-inflation">
+    <div class="sec-hd"><span class="sec-title">Inflation &amp; CPI</span><span class="sec-desc">Price dynamics and monetary theory</span></div>
+    <div class="kpi-strip" id="kpi-inf"></div>
+    <div class="card"><div class="card-hd"><div><div class="card-title">CPI Inflation (%) 2000–2024</div><div class="card-sub">Annual consumer price inflation</div></div><span class="tag tr">Monetary</span></div>
+    <div class="annot"><strong>Quantity Theory:</strong> MV = PQ — When money supply M grows faster than real output Q, price level P rises. Target band typically 2–5%.</div>
+    <div class="cw" style="height:230px"><canvas id="c_infl"></canvas></div></div>
+    <div class="g2">
+      <div class="card"><div class="card-hd"><div><div class="card-title">CPI Component Breakdown</div><div class="card-sub">Food · Energy · Core · Housing</div></div></div><div class="cw" style="height:190px"><canvas id="c_cpic"></canvas></div></div>
+      <div class="card"><div class="card-hd"><div><div class="card-title">Nominal vs Real Rate</div><div class="card-sub">Fisher equation: r = i − π</div></div><span class="tag ty">Fisher</span></div><div class="cw" style="height:190px"><canvas id="c_fish"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- TRADE -->
+  <div class="section" id="sec-trade">
+    <div class="sec-hd"><span class="sec-title">Trade &amp; Exports</span><span class="sec-desc">Comparative Advantage — Heckscher-Ohlin</span></div>
+    <div class="kpi-strip" id="kpi-tr"></div>
+    <div class="card"><div class="card-hd"><div><div class="card-title">RCA Index by Sector</div><div class="card-sub">Balassa index — &gt;1 means comparative advantage</div></div><span class="tag tb">Comp. Adv.</span></div>
+    <div class="annot"><strong>Balassa RCA:</strong> RCA = (E_ij/E_it)/(E_wj/E_wt). Green bars = competitive (RCA&gt;1), red = comparative disadvantage.</div>
+    <div class="cw" style="height:230px"><canvas id="c_rca"></canvas></div></div>
+    <div class="g2">
+      <div class="card"><div class="card-hd"><div><div class="card-title">Trade Balance Trend</div><div class="card-sub">Surplus / Deficit (USD Bn)</div></div></div><div class="cw" style="height:190px"><canvas id="c_trbal"></canvas></div></div>
+      <div class="card"><div class="card-hd"><div><div class="card-title">Export Partner Mix</div><div class="card-sub">Top destination markets (%)</div></div></div><div class="cw" style="height:190px"><canvas id="c_part"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- LABOR -->
+  <div class="section" id="sec-labor">
+    <div class="sec-hd"><span class="sec-title">Unemployment</span><span class="sec-desc">Phillips Curve dynamics</span></div>
+    <div class="kpi-strip" id="kpi-lab"></div>
+    <div class="card"><div class="card-hd"><div><div class="card-title">Unemployment Rate (%)</div><div class="card-sub">Cyclical, structural, frictional</div></div><span class="tag tr">Phillips</span></div><div class="cw" style="height:230px"><canvas id="c_uemp"></canvas></div></div>
+    <div class="g2">
+      <div class="card"><div class="card-hd"><div><div class="card-title">Labor Force Participation</div><div class="card-sub">% working-age in labor market</div></div></div><div class="cw" style="height:190px"><canvas id="c_lfpr"></canvas></div></div>
+      <div class="card"><div class="card-hd"><div><div class="card-title">Youth vs Adult Unemployment</div><div class="card-sub">Structural mismatch indicator</div></div></div><div class="cw" style="height:190px"><canvas id="c_youth"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- DEBT -->
+  <div class="section" id="sec-debt">
+    <div class="sec-hd"><span class="sec-title">Debt &amp; Fiscal</span><span class="sec-desc">DSA — Debt Sustainability Analysis</span></div>
+    <div class="kpi-strip" id="kpi-debt"></div>
+    <div class="card"><div class="card-hd"><div><div class="card-title">Public Debt (% GDP)</div><div class="card-sub">Trajectory with DSA thresholds</div></div><span class="tag ty">DSA</span></div>
+    <div class="annot"><strong>DSA Condition:</strong> Debt stable when g − r &gt; 0. When real interest rate r exceeds growth g, debt-to-GDP spirals without primary surplus.</div>
+    <div class="cw" style="height:230px"><canvas id="c_debt"></canvas></div></div>
+    <div class="g2">
+      <div class="card"><div class="card-hd"><div><div class="card-title">Fiscal Balance (% GDP)</div><div class="card-sub">Primary + overall budget</div></div></div><div class="cw" style="height:190px"><canvas id="c_fisc"></canvas></div></div>
+      <div class="card"><div class="card-hd"><div><div class="card-title">DSA Map — g−r vs Debt</div><div class="card-sub">5 economies plotted</div></div><span class="tag ty">DSA</span></div><div class="cw" style="height:190px"><canvas id="c_dsa"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- POPULATION -->
+  <div class="section" id="sec-population">
+    <div class="sec-hd"><span class="sec-title">Demographics</span><span class="sec-desc">Demographic dividend and dependency ratio</span></div>
+    <div class="kpi-strip" id="kpi-pop"></div>
+    <div class="g2">
+      <div class="card"><div class="card-hd"><div><div class="card-title">Population Growth Rate</div><div class="card-sub">Annual % growth</div></div></div><div class="cw" style="height:210px"><canvas id="c_popg"></canvas></div></div>
+      <div class="card"><div class="card-hd"><div><div class="card-title">Age Dependency Ratio</div><div class="card-sub">Dependents per 100 working-age</div></div></div><div class="cw" style="height:210px"><canvas id="c_dep"></canvas></div></div>
+    </div>
+    <div class="card"><div class="card-hd"><div><div class="card-title">Urbanization Trend</div><div class="card-sub">Urban vs rural split — structural transformation</div></div></div><div class="cw" style="height:190px"><canvas id="c_urb"></canvas></div></div>
+  </div>
+
+  <!-- PHILLIPS -->
+  <div class="section" id="sec-phillips">
+    <div class="sec-hd"><span class="sec-title">Phillips Curve</span><span class="sec-desc">Unemployment–Inflation trade-off</span></div>
+    <div class="annot"><strong>Phillips Curve:</strong> π = πᵉ − β(u − u*). Inflation falls when unemployment rises above natural rate u*. Short-run curve shifts with expectations.</div>
+    <div class="card" style="margin-top:14px"><div class="card-hd"><div><div class="card-title">Unemployment vs Inflation Scatter</div><div class="card-sub">Each point = one year</div></div><span class="tag tr">Phillips</span></div><div class="cw" style="height:280px"><canvas id="c_phsc"></canvas></div></div>
+    <div class="g2">
+      <div class="card"><div class="card-hd"><div><div class="card-title">NAIRU Indicators</div><div class="card-sub">Natural rate vs actual gap</div></div></div><div id="nairu-p" style="padding-top:6px"></div></div>
+      <div class="card"><div class="card-hd"><div><div class="card-title">Inflation Expectations</div><div class="card-sub">Actual vs expected π</div></div></div><div class="cw" style="height:175px"><canvas id="c_inflexp"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- SOLOW -->
+  <div class="section" id="sec-solow">
+    <div class="sec-hd"><span class="sec-title">Solow Growth Model</span><span class="sec-desc">Capital accumulation and steady state</span></div>
+    <div class="annot"><strong>Solow:</strong> Δk = sf(k) − (n+δ)k. Capital per worker grows when savings exceed break-even investment. At k* (steady state), growth = TFP only.</div>
+    <div class="card" style="margin-top:14px"><div class="card-hd"><div><div class="card-title">Steady-State Diagram</div><div class="card-sub">sf(k) vs (n+δ)k — convergence to k*</div></div><span class="tag tg">Solow</span></div><div class="cw" style="height:270px"><canvas id="c_solow"></canvas></div></div>
+    <div class="g2">
+      <div class="card"><div class="card-hd"><div><div class="card-title">TFP Growth (Solow Residual)</div><div class="card-sub">Technology factor estimate</div></div></div><div class="cw" style="height:190px"><canvas id="c_tfp"></canvas></div></div>
+      <div class="card"><div class="card-hd"><div><div class="card-title">Beta-Convergence</div><div class="card-sub">Log GDP 2010 vs avg growth</div></div></div><div class="cw" style="height:190px"><canvas id="c_conv"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- PPP -->
+  <div class="section" id="sec-ppp">
+    <div class="sec-hd"><span class="sec-title">Purchasing Power Parity</span><span class="sec-desc">Exchange rate misalignment</span></div>
+    <div class="annot"><strong>PPP Theory:</strong> S = P/P*. Exchange rate should equalize price levels. Deviation signals over/undervaluation vs fundamentals.</div>
+    <div class="card" style="margin-top:14px"><div class="card-hd"><div><div class="card-title">PPP vs Market Rate — Valuation Gap</div><div class="card-sub">Over(−) / Under(+) valued currency</div></div><span class="tag tp">PPP</span></div><div class="cw" style="height:240px"><canvas id="c_ppp"></canvas></div></div>
+    <div class="g2">
+      <div class="card"><div class="card-hd"><div><div class="card-title">Big Mac Index</div><div class="card-sub">Informal PPP measure (USD)</div></div></div><div class="cw" style="height:190px"><canvas id="c_bmc"></canvas></div></div>
+      <div class="card"><div class="card-hd"><div><div class="card-title">REER Index</div><div class="card-sub">Trade-weighted (100 = base)</div></div></div><div class="cw" style="height:190px"><canvas id="c_reer"></canvas></div></div>
+    </div>
+  </div>
+
+  <!-- COMPARATIVE -->
+  <div class="section" id="sec-comparative">
+    <div class="sec-hd"><span class="sec-title">Comparative Advantage</span><span class="sec-desc">RCA — Heckscher-Ohlin specialization</span></div>
+    <div class="annot"><strong>H-O Theorem:</strong> Countries export goods intensive in their abundant factor. Labor-abundant economies (e.g. Bangladesh) have advantage in labor-intensive industries.</div>
+    <div class="card" style="margin-top:14px"><div class="card-hd"><div><div class="card-title">RCA Index by Sector</div><div class="card-sub">Balassa RCA — green &gt;1 = advantage</div></div><span class="tag tb">RCA</span></div><div class="cw" style="height:250px"><canvas id="c_rcafull"></canvas></div></div>
+    <div class="card"><div class="card-hd"><div><div class="card-title">Factor Endowment Radar</div><div class="card-sub">Labor · Capital · Land · Tech · Energy relative abundance</div></div></div><div class="cw" style="height:260px"><canvas id="c_radar"></canvas></div></div>
+  </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+const YR=[2010,2012,2014,2016,2018,2020,2022,2024];
+const YRF=Array.from({length:25},(_,i)=>2000+i);
+const D={
+  BGD:{name:'Bangladesh',flag:'🇧🇩',
+    gg:[5.6,6.5,6.1,7.1,7.9,3.5,7.1,5.8],
+    ggf:[5.3,5.3,5.9,6.7,6.1,7.1,7.4,7.9,6.0,3.5,5.4,7.1,6.5,5.8,5.5,5.3,5.7,6.1,6.5,6.9,7.2,7.9,6.0,5.4,5.8],
+    gc:[2100,2500,3000,3600,4500,4900,5700,6300],cf:[24,25,27,30,31,28,32,33],
+    inf:[7.3,6.2,7.0,5.5,5.8,5.6,7.7,9.9],
+    inff:[2.2,1.6,3.7,6.8,7.2,6.8,7.2,9.1,8.9,5.4,8.1,10.7,5.6,6.8,6.2,6.2,5.9,5.5,5.5,5.5,5.6,7.7,9.9,8.5,9.9],
+    ue:[4.3,4.5,4.4,4.2,4.3,5.3,4.7,4.7],lf:[57,57,58,58,59,55,58,59],yu:[9.5,10.2,10.5,11.0,11.5,13.5,12.5,12.0],
+    ex:[19,24,30,34,38,33,52,55],im:[28,34,40,43,55,48,82,76],tb:[-9,-10,-10,-9,-17,-15,-30,-21],
+    dg:[28,30,31,32,33,37,38,39],fb:[-3.5,-3.8,-3.5,-3.5,-4.6,-5.5,-5.2,-5.4],
+    pg:[1.2,1.1,1.1,1.0,1.0,1.0,0.9,0.9],dr:[52,48,46,44,42,41,40,39],up:[28,30,32,35,37,38,40,41],
+    nairu:4.3,nr:7.0,ppp:38.5,mkt:110,reer:[95,98,100,102,105,104,108,112],
+    rca:{Garments:8.2,Textiles:3.1,Leather:1.8,Jute:4.5,Seafood:1.2,Pharma:0.4,Electronics:0.1,Machinery:0.1},
+    kpis:['$440B','5.8%','9.9%','4.7%','39%','$55B'],
+    ch:['up','down','down','neutral','down','up'],
+    sigs:[['Growth Momentum','sig-bull','STRONG'],['Inflation Risk','sig-bear','HIGH'],['Debt Sustainability','sig-bull','STABLE'],['Trade Balance','sig-bear','DEFICIT'],['Demographics','sig-bull','DIVIDEND']],
+    pt:{EU:60,USA:17,UK:8,Canada:3,Other:12},fe:[9,3,4,3,5]},
+  IND:{name:'India',flag:'🇮🇳',
+    gg:[8.4,5.5,7.4,8.3,6.5,-6.6,8.7,6.5],
+    ggf:[4.0,4.8,3.8,7.9,8.0,9.3,9.3,6.7,3.9,8.4,10.3,6.6,5.5,7.4,8.0,8.3,6.5,-6.6,8.7,9.1,7.2,6.8,7.2,6.8,6.5],
+    gc:[3500,4200,5400,6500,7800,7400,8400,9200],cf:[35,38,33,30,31,26,30,32],
+    inf:[12.1,9.3,5.8,4.9,3.4,6.2,6.7,5.4],
+    inff:[4.0,3.7,3.9,3.8,4.5,4.4,5.8,6.4,8.4,11.9,9.5,8.9,7.5,5.8,6.7,4.9,3.4,3.7,6.2,5.5,5.7,6.7,6.7,5.4,5.4],
+    ue:[3.5,3.6,3.4,3.5,5.3,7.1,7.3,8.0],lf:[55,54,53,52,49,47,48,48],yu:[10.4,10.6,10.2,10.5,17.8,24.5,23.0,22.5],
+    ex:[220,290,310,260,330,276,450,435],im:[350,490,460,380,510,390,710,680],tb:[-130,-200,-150,-120,-180,-114,-260,-245],
+    dg:[67,68,68,69,70,89,83,82],fb:[-8.4,-7.9,-7.3,-6.9,-6.4,-12.8,-9.4,-8.2],
+    pg:[1.4,1.3,1.2,1.1,1.0,1.0,0.9,0.8],dr:[54,52,50,48,47,47,46,46],up:[30,32,33,34,35,36,37,38],
+    nairu:5.5,nr:6.0,ppp:22,mkt:83,reer:[100,105,98,95,100,104,110,108],
+    rca:{Software:4.2,Textiles:2.8,Pharma:3.5,Chemicals:1.8,Machinery:0.7,Garments:2.1,Gems:3.8,Steel:1.1},
+    kpis:['$3.5T','6.5%','5.4%','8.0%','82%','$435B'],
+    ch:['up','up','neutral','up','up','down'],
+    sigs:[['Growth Momentum','sig-bull','STRONG'],['Inflation Risk','sig-neut','MODERATE'],['Debt Sustainability','sig-neut','WATCH'],['Trade Balance','sig-bear','DEFICIT'],['Demographics','sig-bull','DIVIDEND']],
+    pt:{USA:18,UAE:7,China:5,Saudi:3,Other:67},fe:[8,5,6,6,7]},
+  CHN:{name:'China',flag:'🇨🇳',
+    gg:[10.3,7.8,7.3,6.7,6.7,2.3,3.0,4.9],
+    ggf:[8.4,8.3,9.1,10.1,10.4,11.4,12.7,14.2,9.7,10.3,10.6,9.5,7.9,7.8,7.3,6.9,6.7,6.8,6.7,2.3,8.5,3.0,5.2,4.9,4.9],
+    gc:[9200,11500,14000,16500,19500,20400,22500,23500],cf:[46,47,46,43,43,42,42,41],
+    inf:[3.3,2.6,2.0,2.0,2.1,2.5,2.0,0.2],
+    inff:[0.4,0.7,-0.8,1.2,1.5,1.5,4.8,5.9,5.9,3.3,5.4,5.4,2.7,2.6,2.0,2.0,2.1,1.6,2.5,2.5,0.9,2.0,0.2,0.2,0.2],
+    ue:[4.1,4.0,4.0,3.9,4.0,5.6,5.5,5.2],lf:[70,69,68,67,68,66,66,65],yu:[9.0,9.2,9.3,10.9,11.8,13.8,14.9,18.5],
+    ex:[1580,2050,2340,2100,2500,2590,3590,3380],im:[1390,1820,1960,1590,2140,2060,2720,2560],tb:[190,230,380,510,360,530,870,820],
+    dg:[34,37,41,47,51,55,52,52],fb:[-1.7,-1.5,-1.8,-3.8,-4.2,-6.3,-7.1,-7.3],
+    pg:[0.5,0.5,0.5,0.6,0.5,0.3,0.0,-0.1],dr:[37,36,35,36,38,41,44,46],up:[50,52,55,57,59,61,65,67],
+    nairu:4.0,nr:3.5,ppp:4.0,mkt:7.1,reer:[100,108,112,110,108,109,112,108],
+    rca:{Electronics:3.8,Machinery:2.5,Textiles:3.1,Steel:2.8,Chemicals:1.5,Solar:5.2,EVs:2.1,Garments:3.5},
+    kpis:['$18.5T','4.9%','0.2%','5.2%','52%','$3.38T'],
+    ch:['up','down','down','down','up','down'],
+    sigs:[['Growth Momentum','sig-neut','SLOWING'],['Inflation Risk','sig-bull','LOW'],['Debt Sustainability','sig-neut','WATCH'],['Trade Balance','sig-bull','SURPLUS'],['Demographics','sig-bear','AGEING']],
+    pt:{USA:15,EU:14,ASEAN:15,Japan:5,Other:51},fe:[7,8,5,8,8]},
+  USA:{name:'United States',flag:'🇺🇸',
+    gg:[2.5,2.2,2.5,1.7,3.0,-2.8,1.9,2.5],
+    ggf:[4.2,1.0,1.8,2.8,3.9,3.5,2.9,1.9,-0.1,2.5,2.9,1.6,2.2,1.8,2.5,2.9,1.7,2.3,3.0,2.3,-2.8,5.8,1.9,2.5,2.5],
+    gc:[48000,51000,54500,57500,63000,60500,66000,72000],cf:[19,20,20,21,21,19,21,22],
+    inf:[1.6,2.1,1.6,1.3,2.4,1.2,8.0,3.4],
+    inff:[3.4,2.8,1.6,2.3,3.4,3.2,2.9,2.3,3.8,1.6,1.6,3.1,2.1,1.5,1.6,1.3,2.1,2.1,2.4,1.8,1.2,4.7,8.0,4.1,3.4],
+    ue:[9.6,8.1,6.2,4.9,3.9,8.1,3.7,4.0],lf:[64,63,63,62,63,61,62,62],yu:[18.4,16.2,13.4,10.4,8.6,14.9,8.0,8.5],
+    ex:[1840,2200,2340,2210,2500,2130,3005,3050],im:[2330,2730,2850,2710,3120,2760,3965,3820],tb:[-490,-530,-510,-500,-620,-630,-960,-770],
+    dg:[95,103,105,106,107,129,122,121],fb:[-8.8,-6.8,-4.1,-3.1,-3.8,-14.9,-5.4,-6.3],
+    pg:[0.8,0.8,0.8,0.7,0.6,0.1,0.4,0.5],dr:[49,50,50,51,52,53,53,54],up:[80,81,82,82,83,83,83,83],
+    nairu:4.2,nr:2.5,ppp:1.0,mkt:1.0,reer:[100,102,108,114,109,111,116,108],
+    rca:{Software:4.5,Aerospace:6.2,Finance:3.8,Agriculture:2.1,Pharma:3.2,Energy:1.8,Education:3.0,Defense:5.5},
+    kpis:['$27.4T','2.5%','3.4%','4.0%','121%','$3.05T'],
+    ch:['up','up','down','up','down','up'],
+    sigs:[['Growth Momentum','sig-bull','SOLID'],['Inflation Risk','sig-neut','EASING'],['Debt Sustainability','sig-bear','CONCERN'],['Trade Balance','sig-bear','DEFICIT'],['Demographics','sig-neut','AGEING']],
+    pt:{Canada:18,Mexico:14,China:8,Japan:5,Other:55},fe:[3,9,8,10,9]},
+  DEU:{name:'Germany',flag:'🇩🇪',
+    gg:[3.9,0.4,2.2,2.2,1.5,-4.6,1.8,-0.2],
+    ggf:[1.3,-0.3,1.2,-0.3,1.6,3.7,3.7,0.9,0.6,3.9,4.2,3.7,0.4,0.4,2.2,1.6,2.2,1.7,1.5,0.5,-4.6,3.2,1.8,-0.3,-0.2],
+    gc:[38000,40000,43000,45000,51000,49000,54000,57000],cf:[19,19,20,20,22,21,22,22],
+    inf:[1.1,2.0,0.8,0.5,1.8,0.5,8.7,2.2],
+    inff:[2.0,2.0,1.6,1.1,1.8,1.8,2.3,2.8,2.6,1.1,2.1,2.5,2.0,1.5,0.8,0.1,0.5,1.7,1.8,1.4,0.5,3.2,8.7,5.9,2.2],
+    ue:[7.0,5.4,5.0,4.1,3.4,4.2,3.0,3.4],lf:[61,63,64,65,66,64,66,67],yu:[9.9,8.1,7.7,6.9,6.2,7.4,5.8,6.1],
+    ex:[1270,1400,1510,1340,1560,1380,1560,1560],im:[1060,1170,1216,1055,1290,1170,1630,1460],tb:[210,230,294,285,270,210,-70,100],
+    dg:[80,79,74,68,62,68,66,63],fb:[-4.2,-0.9,0.6,1.2,1.9,-4.3,-2.5,-2.1],
+    pg:[-0.1,0.0,0.2,0.4,0.3,0.0,0.3,0.0],dr:[50,51,52,53,54,55,56,57],up:[74,75,75,76,76,77,77,78],
+    nairu:3.5,nr:1.5,ppp:0.85,mkt:0.92,reer:[100,97,95,94,98,101,102,100],
+    rca:{Machinery:4.2,Autos:5.8,Chemicals:2.5,Pharma:2.1,Electronics:1.8,Finance:1.5,Defense:1.2,Agriculture:0.8},
+    kpis:['$4.4T','-0.2%','2.2%','3.4%','63%','$1.56T'],
+    ch:['down','down','down','up','down','neutral'],
+    sigs:[['Growth Momentum','sig-bear','STAGNANT'],['Inflation Risk','sig-bull','EASING'],['Debt Sustainability','sig-bull','SOLID'],['Trade Balance','sig-bull','SURPLUS'],['Demographics','sig-bear','AGEING']],
+    pt:{USA:10,China:8,France:7,Netherlands:6,Other:69},fe:[3,9,4,9,7]}
+};
+const KPI_LABELS=['GDP (nominal)','GDP Growth','Inflation (CPI)','Unemployment','Debt/GDP','Total Exports'];
+const KPI_COLS=['#00e5a0','#4f8eff','#ff6b6b','#f5c518','#b07bff','#00e5a0'];
+
+let CC='BGD',CS='overview';
+const CR={};
+
+function dc(id){if(CR[id]){CR[id].destroy();delete CR[id];}}
+function mc(id,cfg){dc(id);const el=document.getElementById(id);if(!el)return;CR[id]=new Chart(el,cfg);return CR[id];}
+const DO={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:10}}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#6b7280',font:{size:10}}}}};
+function dm(a,b){const o=Object.assign({},a);for(const k in b){if(b[k]&&typeof b[k]==='object'&&!Array.isArray(b[k]))o[k]=dm(a[k]||{},b[k]);else o[k]=b[k];}return o;}
+function ld(data,color,label='',fill=false){return{label,data,borderColor:color,backgroundColor:fill?color.replace(')',',0.12)').replace('rgb','rgba'):'transparent',fill,tension:0.35,pointRadius:0,borderWidth:2};}
+function pct(v){return{callback:v=>v+'%'};}
+
+const TITLES={overview:'Overview Dashboard',growth:'GDP & Growth',inflation:'Inflation & CPI',trade:'Trade & Exports',labor:'Unemployment',debt:'Debt & Fiscal',population:'Demographics',phillips:'Phillips Curve',solow:'Solow Growth Model',ppp:'PPP Analysis',comparative:'Comparative Advantage'};
+
+function go(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+id).classList.add('active');
+  document.getElementById('pg-title').textContent=TITLES[id];
+  CS=id;render(id);
+  // highlight nav
+  document.querySelectorAll('.nav-item').forEach(n=>{if(n.textContent.trim()===document.getElementById('pg-title').textContent)n.classList.add('active');});
+}
+function setC(code,btn){
+  CC=code;
+  document.querySelectorAll('.country-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('ov-name').textContent=D[code].name;
+  render(CS);
+}
+
+function kpiHTML(d){
+  return KPI_LABELS.map((l,i)=>`<div class="kpi-card fu" style="--ac:${KPI_COLS[i]}"><div class="kpi-label">${l}</div><div class="kpi-value">${d.kpis[i]}</div><div class="kpi-change ${d.ch[i]}">${d.ch[i]==='up'?'▲':d.ch[i]==='down'?'▼':'—'}</div></div>`).join('');
+}
+function sigHTML(sigs){return sigs.map(s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)"><span style="font-size:11px;color:#6b7280">${s[0]}</span><span class="sig ${s[1]}"><span class="sig-dot"></span>${s[2]}</span></div>`).join('');}
+function cmpHTML(){
+  const cs=['BGD','IND','CHN','USA','DEU'];
+  const ms=[['GDP Growth','gg'],[' Inflation','inf'],['Unemployment','ue'],['Debt/GDP','dg'],['Exports','ex']];
+  let h=`<div class="cc ch cl">Indicator</div>`;
+  cs.forEach(c=>h+=`<div class="cc ch">${D[c].flag} ${D[c].name.split(' ')[0]}</div>`);
+  ms.forEach(([l,k])=>{
+    const vals=cs.map(c=>D[c][k].slice(-1)[0]);
+    const sorted=[...vals].sort((a,b)=>a-b);
+    h+=`<div class="cc cl">${l}</div>`;
+    cs.forEach((c,i)=>{const r=sorted.indexOf(vals[i]);h+=`<div class="cc cv h${r+1}">${vals[i]}</div>`;});
+  });
+  return h;
+}
+
+function render(id){
+  const d=D[CC];
+  if(id==='overview'){
+    document.getElementById('kpi0').innerHTML=kpiHTML(d);
+    document.getElementById('sig-panel').innerHTML=sigHTML(d.sigs);
+    document.getElementById('cmp-grid').innerHTML=cmpHTML();
+    mc('c_gdpov',{type:'line',data:{labels:YR,datasets:[ld(d.gg,'#00e5a0','',true)]},options:dm(DO,{scales:{y:{ticks:pct()}}})});
+    mc('c_phov',{type:'scatter',data:{datasets:[{data:d.ue.map((u,i)=>({x:u,y:d.inf[i]})),backgroundColor:'#ff6b6b',pointRadius:5}]},options:dm(DO,{scales:{x:{title:{display:true,text:'Unemp %',color:'#6b7280',font:{size:9}}},y:{title:{display:true,text:'Inflation %',color:'#6b7280',font:{size:9}}}}})});
+    mc('c_trov',{type:'bar',data:{labels:YR,datasets:[{label:'Exports',data:d.ex,backgroundColor:'rgba(0,229,160,.65)'},{label:'Imports',data:d.im,backgroundColor:'rgba(255,107,107,.5)'}]},options:dm(DO,{plugins:{legend:{display:true,labels:{color:'#6b7280',font:{size:10}}}}})});
+  }
+  else if(id==='growth'){
+    document.getElementById('kpi-gdp').innerHTML=`<div class="kpi-card fu" style="--ac:#00e5a0"><div class="kpi-label">GDP Growth 2024</div><div class="kpi-value">${d.kpis[1]}</div><div class="kpi-change ${d.ch[1]}">${d.ch[1]==='up'?'▲':'▼'}</div></div><div class="kpi-card fu" style="--ac:#4f8eff"><div class="kpi-label">GDP per Capita PPP</div><div class="kpi-value">$${d.gc.slice(-1)[0].toLocaleString()}</div></div><div class="kpi-card fu" style="--ac:#b07bff"><div class="kpi-label">Capital Formation</div><div class="kpi-value">${d.cf.slice(-1)[0]}%</div><div class="kpi-unit">% of GDP</div></div><div class="kpi-card fu" style="--ac:#f5c518"><div class="kpi-label">TFP Estimate</div><div class="kpi-value">${(d.gg.slice(-1)[0]*0.4).toFixed(1)}%</div><div class="kpi-unit">Solow residual</div></div>`;
+    mc('c_gdpfull',{type:'bar',data:{labels:YRF,datasets:[{data:d.ggf,backgroundColor:d.ggf.map(v=>v<0?'rgba(255,107,107,.7)':'rgba(0,229,160,.65)')}]},options:dm(DO,{scales:{y:{ticks:pct()}}})});
+    mc('c_gdpcap',{type:'line',data:{labels:YR,datasets:[ld(d.gc,'#4f8eff','',true)]},options:dm(DO,{scales:{y:{ticks:{callback:v=>'$'+v.toLocaleString()}}}})});
+    mc('c_capf',{type:'line',data:{labels:YR,datasets:[ld(d.cf,'#b07bff','',true)]},options:dm(DO,{scales:{y:{ticks:pct()}}})});
+  }
+  else if(id==='inflation'){
+    document.getElementById('kpi-inf').innerHTML=`<div class="kpi-card fu" style="--ac:#ff6b6b"><div class="kpi-label">CPI 2024</div><div class="kpi-value">${d.kpis[2]}</div></div><div class="kpi-card fu" style="--ac:#f5c518"><div class="kpi-label">Food Inflation (est.)</div><div class="kpi-value">${(+d.kpis[2]*1.2).toFixed(1)}%</div></div><div class="kpi-card fu" style="--ac:#b07bff"><div class="kpi-label">Core Inflation</div><div class="kpi-value">${(+d.kpis[2]*0.75).toFixed(1)}%</div></div><div class="kpi-card fu" style="--ac:#4f8eff"><div class="kpi-label">Real Rate (r=i-π)</div><div class="kpi-value">${(d.nairu - +d.kpis[2]).toFixed(1)}%</div></div>`;
+    mc('c_infl',{type:'line',data:{labels:YRF,datasets:[ld(d.inff,'#ff6b6b','',true),{data:YRF.map(()=>5.5),borderColor:'rgba(245,197,24,.4)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false}]},options:dm(DO,{scales:{y:{ticks:pct()}}})});
+    mc('c_cpic',{type:'bar',data:{labels:['Food','Energy','Core','Housing','Other'],datasets:[{data:[d.inf.slice(-1)[0]*1.3,d.inf.slice(-1)[0]*1.1,d.inf.slice(-1)[0]*.7,d.inf.slice(-1)[0]*.9,d.inf.slice(-1)[0]*.5],backgroundColor:['#ff6b6b','#f5c518','#4f8eff','#00e5a0','#b07bff']}]},options:dm(DO,{indexAxis:'y',scales:{x:{ticks:{callback:v=>v.toFixed(1)+'%'}}}})});
+    mc('c_fish',{type:'line',data:{labels:YR,datasets:[ld(d.inf.map(v=>v+2),'#f5c518','Nominal'),ld(d.inf,'#ff6b6b','Real')]},options:dm(DO,{plugins:{legend:{display:true,labels:{color:'#6b7280',font:{size:10}}}}})});
+  }
+  else if(id==='trade'){
+    document.getElementById('kpi-tr').innerHTML=`<div class="kpi-card fu" style="--ac:#00e5a0"><div class="kpi-label">Exports 2024</div><div class="kpi-value">${d.kpis[5]}</div></div><div class="kpi-card fu" style="--ac:#ff6b6b"><div class="kpi-label">Trade Balance</div><div class="kpi-value">$${d.tb.slice(-1)[0]}B</div></div><div class="kpi-card fu" style="--ac:#4f8eff"><div class="kpi-label">Top RCA Sector</div><div class="kpi-value" style="font-size:14px">${Object.entries(d.rca).sort((a,b)=>b[1]-a[1])[0][0]}</div></div>`;
+    const re=Object.entries(d.rca).sort((a,b)=>b[1]-a[1]);
+    mc('c_rca',{type:'bar',data:{labels:re.map(e=>e[0]),datasets:[{data:re.map(e=>e[1]),backgroundColor:re.map(e=>e[1]>=1?'rgba(0,229,160,.72)':'rgba(255,107,107,.6)')}]},options:dm(DO,{scales:{y:{ticks:{callback:v=>v.toFixed(1)}}}})});
+    mc('c_trbal',{type:'bar',data:{labels:YR,datasets:[{data:d.tb,backgroundColor:d.tb.map(v=>v>=0?'rgba(0,229,160,.7)':'rgba(255,107,107,.7)')}]},options:dm(DO,{scales:{y:{ticks:{callback:v=>'$'+v+'B'}}}})});
+    const pe=Object.entries(d.pt);
+    mc('c_part',{type:'doughnut',data:{labels:pe.map(p=>p[0]),datasets:[{data:pe.map(p=>p[1]),backgroundColor:['#00e5a0','#4f8eff','#ff6b6b','#f5c518','#b07bff'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:'#6b7280',font:{size:10},boxWidth:9}}}}});
+  }
+  else if(id==='labor'){
+    document.getElementById('kpi-lab').innerHTML=`<div class="kpi-card fu" style="--ac:#f5c518"><div class="kpi-label">Unemployment 2024</div><div class="kpi-value">${d.kpis[3]}</div></div><div class="kpi-card fu" style="--ac:#4f8eff"><div class="kpi-label">NAIRU Estimate</div><div class="kpi-value">${d.nairu}%</div></div><div class="kpi-card fu" style="--ac:#00e5a0"><div class="kpi-label">LFPR</div><div class="kpi-value">${d.lf.slice(-1)[0]}%</div></div><div class="kpi-card fu" style="--ac:#ff6b6b"><div class="kpi-label">Youth Unemployment</div><div class="kpi-value">${d.yu.slice(-1)[0]}%</div></div>`;
+    mc('c_uemp',{type:'line',data:{labels:YR,datasets:[ld(d.ue,'#f5c518','',true),{data:YR.map(()=>d.nairu),borderColor:'rgba(79,142,255,.4)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false}]},options:dm(DO,{scales:{y:{ticks:pct()}}})});
+    mc('c_lfpr',{type:'line',data:{labels:YR,datasets:[ld(d.lf,'#00e5a0','',true)]},options:dm(DO,{scales:{y:{ticks:pct()}}})});
+    mc('c_youth',{type:'line',data:{labels:YR,datasets:[ld(d.yu,'#ff6b6b','Youth'),ld(d.ue,'#f5c518','Adult')]},options:dm(DO,{plugins:{legend:{display:true,labels:{color:'#6b7280',font:{size:10}}}}})});
+  }
+  else if(id==='debt'){
+    document.getElementById('kpi-debt').innerHTML=`<div class="kpi-card fu" style="--ac:#b07bff"><div class="kpi-label">Debt/GDP 2024</div><div class="kpi-value">${d.kpis[4]}</div></div><div class="kpi-card fu" style="--ac:#00e5a0"><div class="kpi-label">g − r Spread</div><div class="kpi-value">${(d.gg.slice(-1)[0]-d.nr).toFixed(1)}%</div><div class="kpi-unit">DSA sustainability</div></div><div class="kpi-card fu" style="--ac:#ff6b6b"><div class="kpi-label">Fiscal Balance</div><div class="kpi-value">${d.fb.slice(-1)[0]}%</div><div class="kpi-unit">% of GDP</div></div>`;
+    mc('c_debt',{type:'line',data:{labels:YR,datasets:[ld(d.dg,'#b07bff','',true),{data:YR.map(()=>60),borderColor:'rgba(245,197,24,.4)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false},{data:YR.map(()=>100),borderColor:'rgba(255,107,107,.4)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false}]},options:dm(DO,{scales:{y:{ticks:pct()}}})});
+    mc('c_fisc',{type:'bar',data:{labels:YR,datasets:[{data:d.fb,backgroundColor:d.fb.map(v=>v>=0?'rgba(0,229,160,.7)':'rgba(255,107,107,.7)')}]},options:dm(DO,{scales:{y:{ticks:pct()}}})});
+    const cs=['BGD','IND','CHN','USA','DEU'];
+    mc('c_dsa',{type:'scatter',data:{datasets:[{data:cs.map(c=>({x:D[c].dg.slice(-1)[0],y:D[c].gg.slice(-1)[0]-D[c].nr})),backgroundColor:['#00e5a0','#4f8eff','#ff6b6b','#f5c518','#b07bff'],pointRadius:8}]},options:dm(DO,{scales:{x:{title:{display:true,text:'Debt/GDP %',color:'#6b7280',font:{size:9}}},y:{title:{display:true,text:'g−r spread',color:'#6b7280',font:{size:9}}}}})});
+  }
+  else if(id==='population'){
+    document.getElementById('kpi-pop').innerHTML=`<div class="kpi-card fu" style="--ac:#4f8eff"><div class="kpi-label">Pop. Growth</div><div class="kpi-value">${d.pg.slice(-1)[0]}%</div></div><div class="kpi-card fu" style="--ac:#f5c518"><div class="kpi-label">Dep. Ratio</div><div class="kpi-value">${d.dr.slice(-1)[0]}</div><div class="kpi-unit">per 100 working-age</div></div><div class="kpi-card fu" style="--ac:#00e5a0"><div class="kpi-label">Urban Pop.</div><div class="kpi-value">${d.up.slice(-1)[0]}%</div></div>`;
+    mc('c_popg',{type:'bar',data:{labels:YR,datasets:[{data:d.pg,backgroundColor:'rgba(79,142,255,.7)'}]},options:dm(DO,{scales:{y:{ticks:pct()}}})});
+    mc('c_dep',{type:'line',data:{labels:YR,datasets:[ld(d.dr,'#f5c518','',true)]},options:DO});
+    mc('c_urb',{type:'bar',data:{labels:YR,datasets:[{label:'Urban',data:d.up,backgroundColor:'rgba(0,229,160,.7)',stack:'a'},{label:'Rural',data:d.up.map(v=>100-v),backgroundColor:'rgba(255,255,255,.08)',stack:'a'}]},options:dm(DO,{plugins:{legend:{display:true,labels:{color:'#6b7280',font:{size:10}}}},scales:{x:{stacked:true},y:{stacked:true,ticks:pct()}}})});
+  }
+  else if(id==='phillips'){
+    const pts=d.ue.map((u,i)=>({x:u,y:d.inf[i]}));
+    mc('c_phsc',{type:'scatter',data:{datasets:[{data:pts,backgroundColor:'#ff6b6b',pointRadius:7,pointHoverRadius:9}]},options:dm(DO,{scales:{x:{title:{display:true,text:'Unemployment Rate (%)',color:'#6b7280',font:{size:10}}},y:{title:{display:true,text:'Inflation Rate (%)',color:'#6b7280',font:{size:10}}}}})});
+    const gap=(d.ue.slice(-1)[0]-d.nairu).toFixed(1);
+    document.getElementById('nairu-p').innerHTML=`
+      <div class="ind-row"><span class="ind-lbl">NAIRU Estimate</span><div class="ind-bw"><div class="ind-b" style="width:${Math.min(d.nairu/10*100,100)}%;background:#4f8eff"></div></div><span class="ind-v" style="color:#4f8eff">${d.nairu}%</span></div>
+      <div class="ind-row"><span class="ind-lbl">Actual u</span><div class="ind-bw"><div class="ind-b" style="width:${Math.min(d.ue.slice(-1)[0]/10*100,100)}%;background:#f5c518"></div></div><span class="ind-v" style="color:#f5c518">${d.ue.slice(-1)[0]}%</span></div>
+      <div class="ind-row"><span class="ind-lbl">Gap u−u*</span><div class="ind-bw"><div class="ind-b" style="width:${Math.min(Math.abs(gap)/5*100,100)}%;background:${gap>0?'#ff6b6b':'#00e5a0'}"></div></div><span class="ind-v" style="color:${gap>0?'#ff6b6b':'#00e5a0'}">${gap}%</span></div>
+      <div style="margin-top:12px">${+gap>0?'<span class="sig sig-bear"><span class="sig-dot"></span>ABOVE NAIRU — Disinflationary</span>':'<span class="sig sig-bull"><span class="sig-dot"></span>BELOW NAIRU — Inflationary Pressure</span>'}</div>`;
+    mc('c_inflexp',{type:'line',data:{labels:YR,datasets:[ld(d.inf,'#ff6b6b','Actual'),ld(d.inf.map(v=>v*.85),'rgba(245,197,24,.7)','Expected')]},options:dm(DO,{plugins:{legend:{display:true,labels:{color:'#6b7280',font:{size:10}}}}})});
+  }
+  else if(id==='solow'){
+    const k=Array.from({length:50},(_,i)=>(i+1)*2);
+    const sfk=k.map(ki=>0.28*Math.pow(ki,0.35)),bk=k.map(ki=>0.06*ki);
+    mc('c_solow',{type:'line',data:{labels:k,datasets:[{label:'sf(k)',data:sfk,borderColor:'#00e5a0',borderWidth:2,pointRadius:0,fill:false,tension:.4},{label:'(n+δ)k',data:bk,borderColor:'#ff6b6b',borderWidth:2,pointRadius:0,fill:false}]},options:dm(DO,{plugins:{legend:{display:true,labels:{color:'#6b7280',font:{size:10}}}},scales:{x:{title:{display:true,text:'Capital per Worker k',color:'#6b7280',font:{size:9}}},y:{title:{display:true,text:'Output / Investment',color:'#6b7280',font:{size:9}}}}})});
+    const tfp=d.gg.map((g,i)=>Math.max(0,g-0.35*d.cf[i]/10-0.65*(d.lf[i]/10)));
+    mc('c_tfp',{type:'bar',data:{labels:YR,datasets:[{data:tfp.map(v=>+v.toFixed(2)),backgroundColor:'rgba(0,229,160,.6)'}]},options:dm(DO,{scales:{y:{ticks:{callback:v=>v.toFixed(1)+'%'}}}})});
+    const cs=['BGD','IND','CHN','USA','DEU'];
+    mc('c_conv',{type:'scatter',data:{datasets:[{data:cs.map(c=>({x:Math.log(D[c].gc[0]),y:D[c].gg.reduce((a,b)=>a+b,0)/D[c].gg.length})),backgroundColor:['#00e5a0','#4f8eff','#ff6b6b','#f5c518','#b07bff'],pointRadius:9}]},options:dm(DO,{scales:{x:{title:{display:true,text:'Log GDP/Cap 2010',color:'#6b7280',font:{size:9}}},y:{title:{display:true,text:'Avg GDP Growth %',color:'#6b7280',font:{size:9}}}}})});
+  }
+  else if(id==='ppp'){
+    const cs=['BGD','IND','CHN','USA','DEU'];
+    const mis=cs.map(c=>+((c==='USA'?1:D[c].ppp/D[c].mkt-1)*100).toFixed(1));
+    mc('c_ppp',{type:'bar',data:{labels:cs.map(c=>D[c].flag+' '+D[c].name.split(' ')[0]),datasets:[{data:mis,backgroundColor:mis.map(v=>v>0?'rgba(0,229,160,.7)':'rgba(255,107,107,.7)')}]},options:dm(DO,{scales:{y:{title:{display:true,text:'Under(+) / Over(−) valued %',color:'#6b7280',font:{size:9}},ticks:{callback:v=>v+'%'}}}})});
+    mc('c_bmc',{type:'bar',data:{labels:cs.map(c=>D[c].flag),datasets:[{data:[2.1,3.8,3.5,5.6,4.9],backgroundColor:['#00e5a0','#4f8eff','#ff6b6b','#f5c518','#b07bff']}]},options:dm(DO,{scales:{y:{title:{display:true,text:'Big Mac Price (USD)',color:'#6b7280',font:{size:9}}}}})});
+    mc('c_reer',{type:'line',data:{labels:YR,datasets:[ld(d.reer,'#b07bff','REER',true),{data:YR.map(()=>100),borderColor:'rgba(255,255,255,.2)',borderDash:[4,3],borderWidth:1,pointRadius:0,fill:false}]},options:DO});
+  }
+  else if(id==='comparative'){
+    const re=Object.entries(d.rca).sort((a,b)=>b[1]-a[1]);
+    mc('c_rcafull',{type:'bar',data:{labels:re.map(e=>e[0]),datasets:[{data:re.map(e=>e[1]),backgroundColor:re.map(e=>e[1]>=1?'rgba(0,229,160,.72)':'rgba(255,107,107,.6)')}]},options:dm(DO,{indexAxis:'y',scales:{x:{title:{display:true,text:'RCA Index (>1 = advantage)',color:'#6b7280',font:{size:9}},ticks:{callback:v=>v.toFixed(1)}}}})});
+    mc('c_radar',{type:'radar',data:{labels:['Labor','Capital','Land','Technology','Energy'],datasets:[{label:d.name,data:d.fe,backgroundColor:'rgba(0,229,160,.15)',borderColor:'#00e5a0',borderWidth:2,pointRadius:4,pointBackgroundColor:'#00e5a0'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{grid:{color:'rgba(255,255,255,.07)'},angleLines:{color:'rgba(255,255,255,.07)'},pointLabels:{color:'#6b7280',font:{size:11}},ticks:{display:false},min:0,max:10}}}});
+  }
+}
+
+render('overview');
+</script>
+</body>
+</html>
